@@ -35,6 +35,7 @@ class Receiver(threading.Thread):
 				continue
 			print("Message: [" + ClientMsg.decode('utf-8') + "] received on IP/PORT: [" + ClientIP + "," + str(ClientPort) + "]")
 			check(ClientMsg, ClientIP)
+			printTable()
 	              
 
 
@@ -58,6 +59,7 @@ class Sender(threading.Thread):
 			self.longitude = self.message[1].split(")")[0]
 			self.msgID = self.msgID + 1
 			self.message = self.latitude + "|" + self.longitude + "|" + str(datetime.datetime.now().time()) + "|" + str(self.msgID)
+			print(self.message)
 			self.clientSocket.sendto(self.message.encode(), (self.dest_addr, PORT, 0, SCOPEID))
 			time.sleep(5)
 
@@ -81,8 +83,11 @@ def validateTime():
 		now = datetime.datetime.strptime(str(datetime.datetime.now().time()).split(".")[0], '%H:%M:%S')
 		difference = now - lastUpdate
 		if difference.total_seconds() > 30:
+			print("Time out:")
+			print(key + "|" + table[key][0] + "|" + table[key][1] + "|" + table[key][2] + "|" + table[key][3] + "|" + table[key][4])
 			del table[key]
 			break
+	printTable()
 
 
 
@@ -107,6 +112,12 @@ def check(ClientMsg, ClientIP):
 	else:
 		#else we need to add it to the table	
 		table[ClientIP] = [latitude, longitude, time, msgID, str(datetime.datetime.now().time()).split(".")[0]]
+
+
+def printTable():
+	print("Neighbor table:")
+	for key in table:
+		print(key + "|" + table[key][0] + "|" + table[key][1] + "|" + table[key][2] + "|" + table[key][3] + "|" + table[key][4])
 
 
 
