@@ -59,7 +59,7 @@ class Sender(threading.Thread):
 			self.longitude = self.message[1].split(")")[0]
 			self.msgID = self.msgID + 1
 			self.message = self.latitude + "|" + self.longitude + "|" + str(datetime.datetime.now().time()) + "|" + str(self.msgID)
-			print(self.message)
+			print("Sent: " + self.message)
 			self.clientSocket.sendto(self.message.encode(), (self.dest_addr, PORT, 0, SCOPEID))
 			time.sleep(5)
 
@@ -78,16 +78,19 @@ class Timer(threading.Thread):
 			
 
 def validateTime():
+	timedOut = False
 	for key in table:
 		lastUpdate = datetime.datetime.strptime(table[key][4], '%H:%M:%S')
 		now = datetime.datetime.strptime(str(datetime.datetime.now().time()).split(".")[0], '%H:%M:%S')
 		difference = now - lastUpdate
 		if difference.total_seconds() > 30:
+			timedOut = True
 			print("Time out:")
 			print(key + "|" + table[key][0] + "|" + table[key][1] + "|" + table[key][2] + "|" + table[key][3] + "|" + table[key][4])
 			del table[key]
 			break
-	printTable()
+	if timedOut:
+		printTable()
 
 
 
