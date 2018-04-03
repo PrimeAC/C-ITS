@@ -3,6 +3,8 @@ import threading
 import struct
 import time
 import datetime
+import ipaddress
+import hashlib 
 
 
 BUFFSIZE = 1024
@@ -33,8 +35,13 @@ class Receiver(threading.Thread):
 			(ClientMsg, (ClientIP, ClientPort, ClientFlow, ClientScopeId)) = self.serverSocket.recvfrom (self.bufsize)
 			if not ClientMsg:
 				continue
-			print("Message: [" + ClientMsg.decode('utf-8') + "] received on IP/PORT: [" + ClientIP + "," + str(ClientPort) + "]")
-			check(ClientMsg, ClientIP)
+			h = hashlib.blake2s(digest_size=2)
+			h.update(ClientIP.encode('utf-8'))
+			nodeID = h.hexdigest()
+			print(h.digest_size)
+			print("size  ---  " + str(nodeID))
+			print("Message: [" + ClientMsg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(ClientPort) + "]")
+			check(ClientMsg, nodeID)
 			printTable()
 	              
 
@@ -94,33 +101,33 @@ def validateTime():
 
 
 
-def checkMsgID(msgID, ClientIP):
-	if table[ClientIP][3] < msgID:
+def checkMsgID(msgID, nodeID):
+	if table[nodeID][3] < msgID:
 		return True
 	return False
 
 
 
-def check(ClientMsg, ClientIP):
+def check(ClientMsg, nodeID):
 	ClientMsg = ClientMsg.decode('utf-8').split("|")
 	latitude = ClientMsg[0]
 	longitude = ClientMsg[1]
 	time = ClientMsg[2].split(".")[0]
 	msgID = ClientMsg[3]
-	if ClientIP in table:   #means that the table already has that node
-		if checkMsgID(msgID, ClientIP): #valid message id
-			table[ClientIP] = [latitude, longitude, time, msgID, str(datetime.datetime.now().time()).split(".")[0]]
+	if nodeID in table:   #means that the table already has that node
+		if checkMsgID(msgID, nodeID): #valid message id
+			table[nodeID] = [latitude, longitude, time, msgID, str(datetime.datetime.now().time()).split(".")[0]]
 		else:
 			print("Invalid message ID")
 	else:
 		#else we need to add it to the table	
-		table[ClientIP] = [latitude, longitude, time, msgID, str(datetime.datetime.now().time()).split(".")[0]]
+		table[nodeID] = [latitude, longitude, time, msgID, str(datetime.datetime.now().time()).split(".")[0]]
 
 
 def printTable():
 	print("Neighbor table:")
 	for key in table:
-		print(key + "|" + table[key][0] + "|" + table[key][1] + "|" + table[key][2] + "|" + table[key][3] + "|" + table[key][4])
+		print(str(key) + "|" + table[key][0] + "|" + table[key][1] + "|" + table[key][2] + "|" + table[key][3] + "|" + table[key][4])
 
 
 
