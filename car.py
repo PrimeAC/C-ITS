@@ -37,9 +37,7 @@ class Receiver(threading.Thread):
 				continue
 			h = hashlib.blake2s(digest_size=2)
 			h.update(ClientIP.encode('utf-8'))
-			nodeID = h.hexdigest()
-			print(h.digest_size)
-			print("size  ---  " + str(nodeID))
+			nodeID = int(h.hexdigest(), 16)
 			print("Message: [" + ClientMsg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(ClientPort) + "]")
 			check(ClientMsg, nodeID)
 			printTable()
@@ -93,7 +91,7 @@ def validateTime():
 		if difference.total_seconds() > 30:
 			timedOut = True
 			print("Time out:")
-			print(key + "|" + table[key][0] + "|" + table[key][1] + "|" + table[key][2] + "|" + table[key][3] + "|" + table[key][4])
+			print(str(key) + "|" + table[key][0] + "|" + table[key][1] + "|" + table[key][2] + "|" + table[key][3] + "|" + table[key][4])
 			del table[key]
 			break
 	if timedOut:
@@ -102,7 +100,7 @@ def validateTime():
 
 
 def checkMsgID(msgID, nodeID):
-	if table[nodeID][3] < msgID:
+	if int(table[nodeID][3]) < int(msgID):
 		return True
 	return False
 
