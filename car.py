@@ -5,7 +5,6 @@ import struct
 import time
 import datetime
 import hashlib
-import netifaces as ni
 
 #import test_motor.py
 
@@ -25,14 +24,6 @@ LEFT = "123"
 TIME = "15"
 STOP = "49"
 
-
-get_addr = ni.ifaddresses('en1')
-ip = get_addr[ni.AF_INET6][0]['addr']
-
-h = hashlib.blake2s(digest_size=2)
-h.update(ip.encode('utf-8'))
-My_nodeID = int(h.hexdigest(), 16)
-print (My_nodeID)
 
 table = {}  # creates a dictionary that saves all the neighbors status
 sent_time = ""
@@ -65,12 +56,9 @@ class Receiver(threading.Thread):
                 h = hashlib.blake2s(digest_size=2)
                 h.update(ClientIP.encode('utf-8'))
                 nodeID = int(h.hexdigest(), 16)
-                if nodeID != My_nodeID:
-                    print("Message: [" + ClientMsg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(ClientPort) + "]")
-                    check(msg, nodeID)
-                    printTable()
-                else:
-                    break
+                print("Message: [" + ClientMsg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(ClientPort) + "]")
+                check(msg, nodeID)
+                printTable()
             elif type == "DEN":
                 print("Message: [" + ClientMsg.decode('utf-8'))
 
@@ -190,7 +178,7 @@ def check(msg, nodeID):
     longitude = msg[2]
     time = msg[3].split(".")[0]
     msgID = msg[4]
-    if nodeID in table and nodeID != My_nodeID:  # means that the table already has that node
+    if nodeID in table:  # means that the table already has that node
         if checkMsgID(msgID, nodeID):  # valid message id
             sem.acquire()
             print ("Node_ID = " + str(nodeID))
