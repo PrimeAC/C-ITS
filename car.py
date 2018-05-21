@@ -5,6 +5,7 @@ import struct
 import time
 import datetime
 import hashlib
+import netifaces as ni
 
 #import test_motor.py
 
@@ -24,6 +25,14 @@ LEFT = "123"
 TIME = "15"
 STOP = "49"
 
+
+get_addr = ni.ifaddresses('en1')
+ip = get_addr[ni.AF_INET6][0]['addr']
+
+h = hashlib.blake2s(digest_size=2)
+h.update(ip.encode('utf-8'))
+My_nodeID = int(h.hexdigest(), 16)
+print (My_nodeID)
 
 table = {}  # creates a dictionary that saves all the neighbors status
 sent_time = ""
@@ -56,9 +65,11 @@ class Receiver(threading.Thread):
                 h = hashlib.blake2s(digest_size=2)
                 h.update(ClientIP.encode('utf-8'))
                 nodeID = int(h.hexdigest(), 16)
-                print("Message: [" + ClientMsg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(ClientPort) + "]")
-                check(msg, nodeID)
-                printTable()
+                print (nodeID, My_nodeID)
+                if nodeID != My_nodeID:
+                    print("Message: [" + ClientMsg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(ClientPort) + "]")
+                    check(msg, nodeID)
+                    printTable()
             elif type == "DEN":
                 print("Message: [" + ClientMsg.decode('utf-8'))
 
