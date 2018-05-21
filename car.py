@@ -5,6 +5,7 @@ import struct
 import time
 import datetime
 import hashlib
+import netifaces as ni
 
 #import test_motor.py
 
@@ -24,7 +25,17 @@ LEFT = "123"
 TIME = "15"
 STOP = "49"
 
+
+get_addr = ni.ifaddresses('en1')
+ip = get_addr[ni.AF_INET6][0]['addr']
+
+h = hashlib.blake2s(digest_size=2)
+h.update(ip.encode('utf-8'))
+My_nodeID = int(h.hexdigest(), 16)
+print (My_nodeID)
+
 table = {}  # creates a dictionary that saves all the neighbors status
+sent_time = ""
 
 f = open("taxi_february.txt", "r")  # opens the file taxi_february.txt on read mode
 
@@ -54,14 +65,14 @@ class Receiver(threading.Thread):
                 h = hashlib.blake2s(digest_size=2)
                 h.update(ClientIP.encode('utf-8'))
                 nodeID = int(h.hexdigest(), 16)
-                print("Message: [" + ClientMsg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(
-                    ClientPort) + "]")
-                check(msg, nodeID)
-                printTable()
+                if nodeID != My_nodeID:
+                    print("Message: [" + ClientMsg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(ClientPort) + "]")
+                    check(msg, nodeID)
+                    printTable()
+                else:
+                    break
             elif type == "DEN":
                 print("Message: [" + ClientMsg.decode('utf-8'))
-
-
 
 
 class Beacon(threading.Thread):
@@ -78,6 +89,7 @@ class Beacon(threading.Thread):
         self.clientSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, ttl_bin)
 
     def run(self):
+        global sent_time
         for line in f:
             self.gps_message = line.split(";")[2].split("(")[1].split(" ")
             self.type = "beacon"
@@ -88,7 +100,11 @@ class Beacon(threading.Thread):
                 self.msgID)
             print("Sent: " + self.message)
             self.clientSocket.sendto(self.message.encode(), (self.dest_addr, PORT, 0, SCOPEID))
-            time.sleep(5)
+            sent_time = str(datetime.datetime.now().time())
+            while True:
+                if checkTimer() == True:
+                    break
+
 
 class DEN_Sender(threading.Thread):
     def __init__(self):
@@ -104,6 +120,7 @@ class DEN_Sender(threading.Thread):
         self.clientSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, ttl_bin)
 
     def run(self):
+        global sent_time
         input("Press Enter to park... " + "\n")
         self.type = "DEN"
         self.msgID = self.msgID + 1
@@ -112,7 +129,7 @@ class DEN_Sender(threading.Thread):
         self.message = self.type + "|" + str(datetime.datetime.now().time()) + "|" + str(self.msgID) + "|" + self.event_type + "|" + self.duration
         print("Sent: " + self.message)
         self.clientSocket.sendto(self.message.encode(), (self.dest_addr, PORT, 0, SCOPEID))
-
+        sent_time = str(datetime.datetime.now().time())
 
 
 class Timer(threading.Thread):
@@ -124,6 +141,17 @@ class Timer(threading.Thread):
         while True:
             validateTime()
             time.sleep(self.loopTime)
+
+
+def checkTimer():
+    now = datetime.datetime.strptime(str(datetime.datetime.now().time()).split(".")[0], '%H:%M:%S')
+    last_sent = datetime.datetime.strptime(sent_time.split(".")[0], '%H:%M:%S')
+    time.sleep(1)
+
+    if (now - last_sent).total_seconds() >= 4:
+        return True
+    return False
+
 
 
 def validateTime():
@@ -162,10 +190,12 @@ def check(msg, nodeID):
     longitude = msg[2]
     time = msg[3].split(".")[0]
     msgID = msg[4]
-    if nodeID in table:  # means that the table already has that node
+    if nodeID in table and nodeID != My_nodeID:  # means that the table already has that node
         if checkMsgID(msgID, nodeID):  # valid message id
             sem.acquire()
+            print ("Node_ID = " + str(nodeID))
             table[nodeID] = [latitude, longitude, time, msgID, str(datetime.datetime.now().time()).split(".")[0]]
+            print (len(table))
             sem.release()
         else:
             print("Invalid message ID")
@@ -201,6 +231,7 @@ threads.append(receiver)
 threads.append(beacon)
 threads.append(den)
 threads.append(timer)
+
 
 # Wait for all threads to complete
 for t in threads:
