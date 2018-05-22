@@ -9,9 +9,7 @@ import netifaces as ni
 
 #import test_motor.py
 
-BUFFSIZE = 1024
-PORT = 5005
-SCOPEID = 5  # Change value for your network interface index
+
 loopTime = 1
 
 TYPE = 0
