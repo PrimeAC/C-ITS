@@ -6,6 +6,7 @@ import time
 import datetime
 import hashlib
 import netifaces as ni
+import communication
 
 #import test_motor.py
 
@@ -23,6 +24,8 @@ LEFT = "123"
 TIME = "15"
 STOP = "49"
 
+MY_NODEID
+
 
 get_addr = ni.ifaddresses('en1')
 ip = get_addr[ni.AF_INET6][0]['addr']
@@ -38,38 +41,30 @@ sent_time = ""
 f = open("taxi_february.txt", "r")  # opens the file taxi_february.txt on read mode
 
 
-class Receiver(threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(self)
-        self.port = PORT
-        self.bufsize = BUFFSIZE
-
-        group_bin = socket.inet_pton(socket.AF_INET6, 'ff02::0')
-        mreq = group_bin + struct.pack('@I', SCOPEID)
-
-        self.serverSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.serverSocket.bind(('', PORT))
-        print("Server listening for messages on port: " + str(PORT))
-        self.serverSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
+class Handler(threading.Thread):
+    def __init__(self, msg, clientIP, clientPort):
+        self.msg = msg
+        self.clientIP = clientIP
+        self.clientIP = clientPort
 
     def run(self):
-        while True:
-            (ClientMsg, (ClientIP, ClientPort, ClientFlow, ClientScopeId)) = self.serverSocket.recvfrom(self.bufsize)
-            msg = ClientMsg.decode('utf-8').split("|")
-            type = msg[0]
-            if not msg:
-                continue
-            elif type == "beacon":
-                h = hashlib.blake2s(digest_size=2)
-                h.update(ClientIP.encode('utf-8'))
-                nodeID = int(h.hexdigest(), 16)
-                print (nodeID, My_nodeID)
-                if nodeID != My_nodeID:
-                    print("Message: [" + ClientMsg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(ClientPort) + "]")
-                    check(msg, nodeID)
-                    printTable()
-            elif type == "DEN":
-                print("Message: [" + ClientMsg.decode('utf-8'))
+        msg = self.msg.decode('utf-8').split("|")
+        type = msg[0]
+
+        if not msg:
+            exit(-1, "Empty message!")
+
+        elif type == "BEACON":
+            nodeID = communication.converIpToNodeId(self.clientIP)
+            print (nodeID, MY_NODEID)
+            if nodeID != My_nodeID:
+                print("Message: [" + self.msg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(self.clientIP) + "]")
+                check(msg, nodeID)
+                printTable()
+
+        elif type == "DEN":
+            print("Message: [" + self.msg.decode('utf-8'))
+
 
 
 class Beacon(threading.Thread):
