@@ -92,6 +92,7 @@ myNodeID = communication.converIpToNodeId(myIP)
 
 class Handler(threading.Thread):
     def __init__(self, msg, clientIP):
+        threading.Thread.__init__(self)
         self.msg = msg
         self.clientIP = clientIP
 
@@ -103,7 +104,7 @@ class Handler(threading.Thread):
             exit(-1, "Empty message!")
 
         elif type == "BEACON":
-            nodeID = communication.converIpToNodeId(self.clientIP)
+            nodeID = communication.converIpToNodeId(self.clientIP[0])
             print (nodeID, myNodeID)
             if nodeID != myNodeID:
                 print("Message: [" + self.msg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(self.clientIP) + "]")
@@ -111,7 +112,7 @@ class Handler(threading.Thread):
                 printTable()
 
         elif type == "DEN":
-            nodeID = communication.converIpToNodeId(self.clientIP)
+            nodeID = communication.converIpToNodeId(self.clientIP[0])
             if nodeID != myNodeID:
                 print("Message: [" + self.msg.decode('utf-8'))
 
@@ -160,8 +161,8 @@ beaconService = Beacon_Service(open("taxi_february.txt", "r")) # opens the file 
 beaconService.start()
 
 while True:
-    (ClientMsg, (ClientIP, ClientPort)) = communication.Receiver(receiverSocket)
+    (ClientMsg, (ClientIP)) = communication.Receiver(receiverSocket)
     handler = Handler(ClientMsg, ClientIP)
     # Add threads to thread list
     threads.append(handler)
-    handler.run()
+    handler.start()

@@ -11,6 +11,7 @@ SCOPEID = 7  # Change value for your network interface index
 
 def converIpToNodeId(originalIp):
     h = hashlib.blake2s(digest_size=2)
+    print(originalIp)
     h.update(originalIp.encode('utf-8'))
     nodeId = int(h.hexdigest(), 16)
     return nodeId
