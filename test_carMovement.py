@@ -1,5 +1,6 @@
 from time import sleep
 import math
+import test_motor
 
 ############################# COMMON CODE TO BOTH ######################################
 
@@ -58,29 +59,31 @@ def convertPositionsToTime(positions):
 
 def decideTurnDirection(movement, positions):
     if movement == 'left':
-        #left()
+        test_motor.turn_left()
         print("era para a esquerda")
     elif movement == 'right':
-        #right()
+        test_motor.turn_right()
         print("era para a direita")
   
 
-def virtualToRealMovement(movements, positions):
+def virtualToRealMovement(direction, turn, positionx, positiony, duration):
     #receives two arrays with two positions
     #the first array is [forward/backward, right/left]
     #the second array is [forward/backward number of positions, right/left number of positions] 
     #gets the x axis, if it's forward or backward
-    if movements[0] == 'forward': 
+    if direction == 'forward':
         #gets the y axis, if it's left or right
-        #forward()
+        test_motor.forward()
         print("era para a frente")
-        decideTurnDirection(movements[1], positions)
-    else:
-        #backward()
+        decideTurnDirection(turn, positionx)
+    elif direction == 'backward':
+        test_motor.backward()
         print("era para tras")
-        decideTurnDirection(movements[1], positions)
-    sleep(int(convertPositionsToTime(positions)))
-    updatePosition(positions, CAR_MAP)
+        decideTurnDirection(turn, positiony)
+    #sleep(int(convertPositionsToTime(positions)))
+    sleep(float(duration))
+    test_motor.stop()
+    #updatePosition(positiony, CAR_MAP)
 
 
 ############################# END OF CLIENT MOVEMENT ###################################
@@ -203,72 +206,5 @@ def decideMovement(path):
 
 ############################# END OF CLIENT MOVEMENT ###################################
 
-
-
-
-'''
-myMovements = []
-myPositions = []
-myMovements.append(input('forward or backward  '))
-myMovements.append(input('right or left  '))
-
-myPositions.append(input('forward or backward positions  '))
-myPositions.append(input('right or left positions  '))
-
-virtualToRealMovement(myMovements, myPositions)'''
-
-'''
-createMap(CAR_MAP)
-initializePosition(CAR_MAP)
-printMap(CAR_MAP)
-print('-------------------------------------------------')
-createMap(GARAGE_MAP)
-printMap(GARAGE_MAP)
-
-myPositions = []
-myPositions.append(input('forward or backward positions  '))
-myPositions.append(input('right or left positions  '))
-updatePosition(myPositions, CAR_MAP)
-printMap(CAR_MAP)
-myPositions[0] = 4
-updatePosition(myPositions, CAR_MAP)
-print('-------------------------------------------------')
-printMap(CAR_MAP)
-'''
-
-'''
-createMap(GARAGE_MAP)
-initializePosition(GARAGE_MAP)
-printMap(GARAGE_MAP)
-
-path = [[3,0], [6,0], [9,3], [12,6], [15,9]]
-
-decideMovement(path)
-printMap(GARAGE_MAP)
-printPath(path)
-decideMovement(path)
-printMap(GARAGE_MAP)
-printPath(path)
-decideMovement(path)
-printMap(GARAGE_MAP)
-printPath(path)
-decideMovement(path)
-printMap(GARAGE_MAP)
-decideMovement(path)
-printMap(GARAGE_MAP)
-decideMovement(path)
-printMap(GARAGE_MAP)
-decideMovement(path)
-printMap(GARAGE_MAP)
-'''
-
-createMap(GARAGE_MAP)
-initializePosition(GARAGE_MAP)
-printMap(GARAGE_MAP)
-
-GARAGE_MAP[PARKING_SPOT_1[1]][PARKING_SPOT_1[0]] = 1
-
-assignParkingSpot()
-printMap(GARAGE_MAP)
 
 

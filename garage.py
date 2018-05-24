@@ -10,6 +10,8 @@ import netifaces as ni
 
 threads = []
 neighbor_table={}  # creates a dictionary that saves all the neighbors status
+DEN_msg_Id=0
+
 
 #------------------------------------------------
 #FUNCTIONS
@@ -76,6 +78,15 @@ def printTable():
         print(str(key) + "|" + neighbor_table[key][0] + "|" + neighbor_table[key][1] + "|" + neighbor_table[key][2] +
               "|" + neighbor_table[key][3] + "|" + neighbor_table[key][4])
     sem.release()
+
+
+def createDenResponse(direction,turn, positionx, positiony, duration):
+    type = "DEN"
+    time = str(datetime.datetime.now().time())
+    msgId = DEN_msg_Id + 1
+    event_type = direction + "|" + turn
+    msg = type + "|" + time + "|" + str(msgId) + "|" + event_type + "|" + str(duration)
+    return msg
 
 #------------------------------------------------
 #INITIALIZATIONS
@@ -159,6 +170,17 @@ timer = Timer(1)
 timer.start()
 beaconService = Beacon_Service(open("taxi_february.txt", "r")) # opens the file taxi_february.txt on read mode
 beaconService.start()
+
+
+
+communication.Sender(senderSocket, createDenResponse("forward", "", "", "", 2.95))
+time.sleep(3)
+communication.Sender(senderSocket,createDenResponse("forward", "right","", "", 5))
+time.sleep(7)
+communication.Sender(senderSocket,createDenResponse("backward", "right","", "", 5))
+time.sleep(7)
+communication.Sender(senderSocket,createDenResponse("forward", "","", "", 5))
+
 
 while True:
     (ClientMsg, (ClientIP)) = communication.Receiver(receiverSocket)

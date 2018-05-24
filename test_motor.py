@@ -80,7 +80,7 @@ def turn_left():
 
 
 def stop():
-    pwm_motor['enable_dir'].ChangeDutyCycle(MAX_BACKWARD_SPEED)
+    pwm_motor['enable_dir'].ChangeDutyCycle(MIN_SPEED)
 
 
 def test_motor(gpio_data):
@@ -113,5 +113,4 @@ gpio_data = read_gpio_conf('gpio_pins')
 
 pwm_motor = {}
 gpio_init(gpio_data, pwm_motor)
-test_motor(gpio_data)
-GPIO.cleanup()
+

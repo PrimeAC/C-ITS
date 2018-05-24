@@ -2,7 +2,7 @@ import threading
 import time
 import datetime
 import communication
-import netifaces as ni
+import test_carMovement
 
 #----------------------------------------------
 #CONSTANTS
@@ -11,13 +11,6 @@ import netifaces as ni
 TYPE = 0
 LATITUDE = 1
 LONGITUDE = 2
-
-FORWARD = "126"
-BACKWARD = "125"
-RIGHT = "124"
-LEFT = "123"
-TIME = "15"
-STOP = "49"
 
 neighbor_table={}  # creates a dictionary that saves all the neighbors status
 DEN_msg_Id=0
@@ -103,14 +96,15 @@ def processMessage(msg, serverIp):
         nodeID = communication.converIpToNodeId(serverIp[0])
         print (nodeID, myNodeID)
         if nodeID != myNodeID:
-            print("Message: [" + msg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(serverIp) + "]")
+            #print("Message: [" + msg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(serverIp) + "]")
             tableUpdate(msg, nodeID)
             printTable()
 
     elif type == "DEN":
         nodeID = communication.converIpToNodeId(serverIp[0])
         if nodeID != myNodeID:
-            print("Message: [" + msg.decode('utf-8'))
+            #print("Message: [" + msg.decode('utf-8'))
+            test_carMovement.virtualToRealMovement(msg[3], msg[4], "","",msg[5])
 
 
 def createDenResponse():
@@ -129,7 +123,7 @@ def createDenResponse():
 sem = threading.Semaphore()
 receiverSocket = communication.initializeReceiverSocket()
 senderSocket = communication.initializeSenderSocket()
-myIP = ni.ifaddresses('en1')[ni.AF_INET6][0]['addr']
+myIP = 'fe80::ba27:ebff:fed1:533'
 myNodeID = communication.converIpToNodeId(myIP)
 
 #----------------------------------------------
@@ -176,7 +170,7 @@ timer.start()
 beaconService = Beacon_Service(open("taxi_february.txt", "r")) # opens the file taxi_february.txt on read mode
 beaconService.start()
 
-communication.Sender(senderSocket, createDenResponse())
+#communication.Sender(senderSocket, createDenResponse())
 
 while True:
     (ServerMsg, (ServerIP)) = communication.Receiver(receiverSocket)

@@ -2,7 +2,6 @@ import socket
 import threading
 sem = threading.Semaphore()
 import struct
-import hashlib
 
 BUFFSIZE = 1024
 PORT = 5005
@@ -10,11 +9,11 @@ SCOPEID = 7  # Change value for your network interface index
 
 
 def converIpToNodeId(originalIp):
-    h = hashlib.blake2s(digest_size=2)
+    #h = hashlib.blake2s(digest_size=2)
     print(originalIp)
-    h.update(originalIp.encode('utf-8'))
-    nodeId = int(h.hexdigest(), 16)
-    return nodeId
+    #h.update(originalIp.encode('utf-8'))
+    #nodeId = int(h.hexdigest(), 16)
+    return originalIp
 
 
 def initializeReceiverSocket():
