@@ -1,6 +1,6 @@
 from time import sleep
 import math
-import test_motor
+#import test_motor
 
 ############################# COMMON CODE TO BOTH ######################################
 
@@ -57,34 +57,36 @@ def convertPositionsToTime(positions):
     return TIME_SPENT_TO_MOVE * totalPositions
 
 
-def decideTurnDirection(movement, positions):
+def decideTurnDirection(movement):
     if movement == 'left':
-        test_motor.turn_left()
+        #test_motor.turn_left()
         print("era para a esquerda")
     elif movement == 'right':
-        test_motor.turn_right()
+        #test_motor.turn_right()
         print("era para a direita")
-    else:
-        test_motor.noTurn()
+    #else:
+        #test_motor.noTurn()
 
 def virtualToRealMovement(direction, turn, positionx, positiony, duration):
-    #receives two arrays with two positions
-    #the first array is [forward/backward, right/left]
-    #the second array is [forward/backward number of positions, right/left number of positions] 
+    #direction could be forward/backward, and turn could be right/left
+    #positionx number of positions variation, y number of positions variation 
     #gets the x axis, if it's forward or backward
     if direction == 'forward':
         #gets the y axis, if it's left or right
-        test_motor.forward()
+        #test_motor.forward()
         print("era para a frente")
-        decideTurnDirection(turn, positionx)
+        decideTurnDirection(turn)
     elif direction == 'backward':
-        test_motor.backward()
+        #test_motor.backward()
         print("era para tras")
-        decideTurnDirection(turn, positiony)
+        decideTurnDirection(turn)
     #sleep(int(convertPositionsToTime(positions)))
     sleep(float(duration))
     test_motor.stop()
-    #updatePosition(positiony, CAR_MAP)
+    positions = []
+    positions.append(positionx)
+    positions.append(positiony)
+    updatePosition(positions, CAR_MAP)
 
 
 ############################# END OF CLIENT MOVEMENT ###################################
@@ -119,7 +121,7 @@ def turn(path, highest, parkingSpot):
         if isFirst == False:
             coordinates = []
             coordinates.append(x + highest)
-            coordinates.append(x + highest)
+            coordinates.append(x)
             path.append(coordinates)
             print(path)
         else:
@@ -169,10 +171,13 @@ def printPath(path):
 def decideTurn(yDiff):
     if yDiff > 0:
         print('preciso de virar para a direita')
+        return 'right'
     elif yDiff < 0:
         print('preciso de virar para a esquerda')
+        return 'left'
     else:
         print('diff do y e zero')
+        return ''
 
 
 def decideMovement(path):
@@ -194,18 +199,20 @@ def decideMovement(path):
         if nextX - currentX < 0:
             #need to move backwards
             print('mover para tras')
-            movements.append('backwards')
-            decideTurn(nextY - currentY)
+            movements.append('backward')
+            movements.append(decideTurn(nextY - currentY))
         elif nextX - currentX > 0:
             #need to move forward
             print('mover para a frente')
             movements.append('forward')
-            decideTurn(nextY - currentY)
+            movements.append(decideTurn(nextY - currentY))
         print("positions " + str(positions))
         updatePosition(positions, GARAGE_MAP)
         updatePath(path)
 
-############################# END OF CLIENT MOVEMENT ###################################
+############################# END OF SERVER MOVEMENT ###################################
 
 
 
+createMap(CAR_MAP)
+printMap(CAR_MAP)
