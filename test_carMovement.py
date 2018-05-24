@@ -64,7 +64,8 @@ def decideTurnDirection(movement, positions):
     elif movement == 'right':
         test_motor.turn_right()
         print("era para a direita")
-  
+    else:
+        test_motor.noTurn()
 
 def virtualToRealMovement(direction, turn, positionx, positiony, duration):
     #receives two arrays with two positions

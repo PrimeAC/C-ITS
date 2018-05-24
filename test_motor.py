@@ -9,9 +9,9 @@ FREQUENCY = 100
 MIN_SPEED = 0
 MAX_SPEED = 30
 MAX_FORWARD_SPEED = 50
-MAX_BACKWARD_SPEED = 70
+MAX_BACKWARD_SPEED = 95
 SLEEP_TIME = 3.5
-MAX_TURN_SPEED = 85
+MAX_TURN_SPEED = 70
 
 def read_gpio_conf(field):
     print('read_gpio_conf')
@@ -68,12 +68,14 @@ def backward():
 
 
 def turn_right():
+    pwm_motor['enable_dir'].ChangeDutyCycle(MAX_TURN_SPEED)
     GPIO.output(gpio_data['turn_right'], GPIO.HIGH)
     GPIO.output(gpio_data['turn_left'], GPIO.LOW)
     GPIO.output(gpio_data['enable_turn'], GPIO.HIGH)
 
 
 def turn_left():
+    pwm_motor['enable_dir'].ChangeDutyCycle(MAX_TURN_SPEED)
     GPIO.output(gpio_data['turn_left'], GPIO.HIGH)
     GPIO.output(gpio_data['turn_right'], GPIO.LOW)
     GPIO.output(gpio_data['enable_turn'], GPIO.HIGH)
@@ -82,6 +84,9 @@ def turn_left():
 def stop():
     pwm_motor['enable_dir'].ChangeDutyCycle(MIN_SPEED)
 
+
+def noTurn():
+    GPIO.output(gpio_data['enable_turn'], GPIO.LOW)
 
 def test_motor(gpio_data):
     if RASPBERRY == True:
