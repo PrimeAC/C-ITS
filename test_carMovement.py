@@ -91,6 +91,66 @@ def virtualToRealMovement(movements, positions):
 
 GARAGE_MAP = []
 
+PARKING_SPOT_1 = [15,15]
+PARKING_SPOT_2 = [30,15]
+
+
+def assignParkingSpot():
+    if GARAGE_MAP[PARKING_SPOT_1[1]][PARKING_SPOT_1[0]] == 0:
+        print('lugar 1 livre')
+        GARAGE_MAP[PARKING_SPOT_1[1]][PARKING_SPOT_1[0]] = 1
+        createPath(PARKING_SPOT_1)
+    elif GARAGE_MAP[PARKING_SPOT_2[1]][PARKING_SPOT_2[0]] == 0:
+        print('lugar 2 livre')
+        GARAGE_MAP[PARKING_SPOT_2[1]][PARKING_SPOT_2[0]] = 1
+        createPath(PARKING_SPOT_2)
+    else:
+        print('sem lugares disponiveis')
+
+
+def turn(path, highest, parkingSpot):
+    print('segundo')
+    isFirst = True
+    for x in range(0,parkingSpot + 1 ,5):
+        if isFirst == False:
+            coordinates = []
+            coordinates.append(x + highest)
+            coordinates.append(x + highest)
+            path.append(coordinates)
+            print(path)
+        else:
+            isFirst = False
+    return path
+        
+
+def createPath(parkingSpot):
+    #parking spot is the coordinates of de assigned parking spot
+    isFirst = True
+    path = []
+    print(parkingSpot)
+    currentPosition = getCurrentPosition(GARAGE_MAP)
+    xDiff = parkingSpot[0] - currentPosition[0]
+    yDiff = parkingSpot[1] - currentPosition[1]
+    if xDiff - yDiff > 0:
+        print('entrei')
+        for x in range(0,(xDiff - yDiff)+1,5):
+            print('entrei for')
+            #will send the car move forward until xDiff = yDiff
+            if isFirst == False:
+                coordinates = []
+                coordinates.append(x)
+                coordinates.append(0)
+                path.append(coordinates)
+                print(path)
+                print(x == (xDiff - yDiff))
+                if x == (xDiff - yDiff):
+                    path = turn(path, x, parkingSpot[1])
+            else:
+                isFirst = False
+    elif xDiff - yDiff == 0:
+        #needs to turn
+        path = turn(path, 0, parkingSpot[1])
+
 
 def updatePath(path):
     if len(path) > 0:        
@@ -201,3 +261,14 @@ printMap(GARAGE_MAP)
 decideMovement(path)
 printMap(GARAGE_MAP)
 '''
+
+createMap(GARAGE_MAP)
+initializePosition(GARAGE_MAP)
+printMap(GARAGE_MAP)
+
+GARAGE_MAP[PARKING_SPOT_1[1]][PARKING_SPOT_1[0]] = 1
+
+assignParkingSpot()
+printMap(GARAGE_MAP)
+
+
