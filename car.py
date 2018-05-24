@@ -1,14 +1,11 @@
-import socket
 import threading
-sem = threading.Semaphore()
-import struct
 import time
 import datetime
 import hashlib
 import netifaces as ni
 import communication
+sem = threading.Semaphore()
 
-#import test_motor.py
 
 
 loopTime = 1
@@ -24,7 +21,6 @@ LEFT = "123"
 TIME = "15"
 STOP = "49"
 
-MY_NODEID
 
 
 get_addr = ni.ifaddresses('en1')
@@ -33,7 +29,6 @@ ip = get_addr[ni.AF_INET6][0]['addr']
 h = hashlib.blake2s(digest_size=2)
 h.update(ip.encode('utf-8'))
 My_nodeID = int(h.hexdigest(), 16)
-print (My_nodeID)
 
 table = {}  # creates a dictionary that saves all the neighbors status
 sent_time = ""
@@ -45,7 +40,7 @@ class Handler(threading.Thread):
     def __init__(self, msg, clientIP, clientPort):
         self.msg = msg
         self.clientIP = clientIP
-        self.clientIP = clientPort
+        self.clientPort = clientPort
 
     def run(self):
         msg = self.msg.decode('utf-8').split("|")
@@ -56,31 +51,18 @@ class Handler(threading.Thread):
 
         elif type == "BEACON":
             nodeID = communication.converIpToNodeId(self.clientIP)
-            print (nodeID, MY_NODEID)
+            print (nodeID, My_nodeID)
             if nodeID != My_nodeID:
                 print("Message: [" + self.msg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(self.clientIP) + "]")
                 check(msg, nodeID)
                 printTable()
 
         elif type == "DEN":
-            print("Message: [" + self.msg.decode('utf-8'))
+            nodeID = communication.converIpToNodeId(self.clientIP)
+            if nodeID != My_nodeID:
+                print("Message: [" + self.msg.decode('utf-8'))
 
-
-
-class Beacon(threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(self)
-        self.port = PORT
-        self.bufsize = BUFFSIZE
-        self.msgID = 0  # message ID starts at zero and is incremented every time a user sends a message
-
-        ttl_bin = struct.pack('@i', SCOPEID)
-        self.dest_addr = 'ff02::0'
-
-        self.clientSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.clientSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, ttl_bin)
-
-    def run(self):
+    def Beacon_Sender(self):
         global sent_time
         for line in f:
             self.gps_message = line.split(";")[2].split("(")[1].split(" ")
@@ -91,27 +73,13 @@ class Beacon(threading.Thread):
             self.message = self.type + "|" + self.latitude + "|" + self.longitude + "|" + str(datetime.datetime.now().time()) + "|" + str(
                 self.msgID)
             print("Sent: " + self.message)
-            self.clientSocket.sendto(self.message.encode(), (self.dest_addr, PORT, 0, SCOPEID))
+            communication.Sender(communication.initializeSenderSocket(),self.message)
             sent_time = str(datetime.datetime.now().time())
             while True:
                 if checkTimer() == True:
                     break
 
-
-class DEN_Sender(threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(self)
-        self.port = PORT
-        self.bufsize = BUFFSIZE
-        self.msgID = 0  # message ID starts at zero and is incremented every time a user sends a message
-
-        ttl_bin = struct.pack('@i', SCOPEID)
-        self.dest_addr = 'ff02::0'
-
-        self.clientSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.clientSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, ttl_bin)
-
-    def run(self):
+    def Den_Sender(self):
         global sent_time
         input("Press Enter to park... " + "\n")
         self.type = "DEN"
@@ -120,8 +88,9 @@ class DEN_Sender(threading.Thread):
         self.duration = TIME
         self.message = self.type + "|" + str(datetime.datetime.now().time()) + "|" + str(self.msgID) + "|" + self.event_type + "|" + self.duration
         print("Sent: " + self.message)
-        self.clientSocket.sendto(self.message.encode(), (self.dest_addr, PORT, 0, SCOPEID))
+        communication.Sender(communication.initializeSenderSocket(),self.message)
         sent_time = str(datetime.datetime.now().time())
+
 
 
 class Timer(threading.Thread):
@@ -185,9 +154,7 @@ def check(msg, nodeID):
     if nodeID in table:  # means that the table already has that node
         if checkMsgID(msgID, nodeID):  # valid message id
             sem.acquire()
-            print ("Node_ID = " + str(nodeID))
             table[nodeID] = [latitude, longitude, time, msgID, str(datetime.datetime.now().time()).split(".")[0]]
-            print (len(table))
             sem.release()
         else:
             print("Invalid message ID")
@@ -206,27 +173,28 @@ def printTable():
               table[key][4])
     sem.release()
 
-receiver = Receiver()
-beacon = Beacon()
-den = DEN_Sender()
-timer = Timer()
 
-receiver.start()
-beacon.start()
-den.start()
-timer.start()
+socket = communication.initializeReceiverSocket()
 
-threads = []
+while True:
+    (ClientMsg, (ClientIP, ClientPort)) = communication.Receiver(socket)
+    handler = Handler(ClientMsg,ClientIP,ClientPort)
 
-# Add threads to thread list
-threads.append(receiver)
-threads.append(beacon)
-threads.append(den)
-threads.append(timer)
+    timer = Timer()
+
+    handler.start()
+    timer.start()
+
+    threads = []
+
+    # Add threads to thread list
+    threads.append(handler)
+    threads.append(timer)
 
 
-# Wait for all threads to complete
-for t in threads:
-    t.join()
-f.close()  # closes the txt file
-print("Exiting Main Thread")
+    # Wait for all threads to complete
+    for t in threads:
+        t.join()
+    f.close()  # closes the txt file
+    print("Exiting Main Thread")
+
