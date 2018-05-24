@@ -100,7 +100,7 @@ def processMessage(msg, serverIp):
         exit(-1, "Empty message!")
 
     elif type == "BEACON":
-        nodeID = communication.converIpToNodeId(serverIp)
+        nodeID = communication.converIpToNodeId(serverIp[0])
         print (nodeID, myNodeID)
         if nodeID != myNodeID:
             print("Message: [" + msg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(serverIp) + "]")
@@ -108,7 +108,7 @@ def processMessage(msg, serverIp):
             printTable()
 
     elif type == "DEN":
-        nodeID = communication.converIpToNodeId(serverIp)
+        nodeID = communication.converIpToNodeId(serverIp[0])
         if nodeID != myNodeID:
             print("Message: [" + msg.decode('utf-8'))
 
@@ -129,7 +129,7 @@ def createDenResponse():
 sem = threading.Semaphore()
 receiverSocket = communication.initializeReceiverSocket()
 senderSocket = communication.initializeSenderSocket()
-myIP = ni.ifaddresses('en0')[ni.AF_INET6][0]['addr']
+myIP = ni.ifaddresses('en1')[ni.AF_INET6][0]['addr']
 myNodeID = communication.converIpToNodeId(myIP)
 
 #----------------------------------------------
@@ -139,6 +139,7 @@ myNodeID = communication.converIpToNodeId(myIP)
 class Beacon_Service(threading.Thread):
 
     def __init__(self, f):
+        threading.Thread.__init__(self)
         self.msgID = 0
         self.file = f
         self.type = "BEACON"
@@ -178,6 +179,6 @@ beaconService.start()
 communication.Sender(senderSocket, createDenResponse())
 
 while True:
-    (ServerMsg, (ServerIP, ServerPort)) = communication.Receiver(receiverSocket)
+    (ServerMsg, (ServerIP)) = communication.Receiver(receiverSocket)
     processMessage(ServerMsg, ServerIP)
 
