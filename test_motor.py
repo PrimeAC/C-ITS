@@ -58,26 +58,29 @@ def forward():
     GPIO.output(gpio_data['forward_dir'], GPIO.HIGH)
     GPIO.output(gpio_data['backward_dir'], GPIO.LOW)
     GPIO.output(gpio_data['enable_dir'], GPIO.HIGH)
-    sleep (SLEEP_TIME)
+
 
 def backward():
     pwm_motor['enable_dir'].ChangeDutyCycle(MAX_BACKWARD_SPEED)
     GPIO.output(gpio_data['backward_dir'], GPIO.HIGH)
     GPIO.output(gpio_data['forward_dir'], GPIO.LOW)
     GPIO.output(gpio_data['enable_dir'], GPIO.HIGH)
-    sleep (SLEEP_TIME)
+
 
 def turn_right():
     GPIO.output(gpio_data['turn_right'], GPIO.HIGH)
     GPIO.output(gpio_data['turn_left'], GPIO.LOW)
     GPIO.output(gpio_data['enable_turn'], GPIO.HIGH)
-    sleep (SLEEP_TIME)
+
 
 def turn_left():
     GPIO.output(gpio_data['turn_left'], GPIO.HIGH)
     GPIO.output(gpio_data['turn_right'], GPIO.LOW)
     GPIO.output(gpio_data['enable_turn'], GPIO.HIGH)
-    sleep (SLEEP_TIME)
+
+
+def stop():
+    pwm_motor['enable_dir'].ChangeDutyCycle(MAX_BACKWARD_SPEED)
 
 
 def test_motor(gpio_data):
@@ -85,18 +88,23 @@ def test_motor(gpio_data):
         print ('testing motion_engine - forward direction')
         input('print enter to continue')
         forward()
+        sleep(SLEEP_TIME)
         print ('testing motion_engine - backward direction')
         #input('print enter to continue')
         backward()
+        sleep(SLEEP_TIME)
         print ('testing motion_engine - forward direction')
         #input('print enter to continue')
         forward()
+        sleep(SLEEP_TIME)
         print ('testing steering_wheel - right turn')
         #input('print enter to continue')
         turn_right()
+        sleep(SLEEP_TIME)
         print ('testing steering_wheel - left turn')
         #input('print enter to continue')
         turn_left()
+        sleep(SLEEP_TIME)
         print ('test concluded')
         #input('press enter to terminate the test')
 
