@@ -6,7 +6,7 @@ import hashlib
 
 BUFFSIZE = 1024
 PORT = 5005
-SCOPEID = 5  # Change value for your network interface index
+SCOPEID = 7  # Change value for your network interface index
 
 
 def converIpToNodeId(originalIp):
@@ -23,7 +23,8 @@ def initializeReceiverSocket():
     senderSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
     senderSocket.bind(('', PORT))
     print("listening for messages on port: " + str(PORT))
-    return senderSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
+    senderSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
+    return senderSocket
 
 
 def initializeSenderSocket():
@@ -31,7 +32,8 @@ def initializeSenderSocket():
 
     receiverSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
     print ("Criei o socket para enviar")
-    return receiverSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, ttl_bin)
+    receiverSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, ttl_bin)
+    return receiverSocket
 
 
 def Receiver(serverSocket):

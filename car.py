@@ -20,6 +20,7 @@ TIME = "15"
 STOP = "49"
 
 neighbor_table={}  # creates a dictionary that saves all the neighbors status
+DEN_msg_Id=0
 
 #------------------------------------------------
 #FUNCTIONS
@@ -110,6 +111,17 @@ def processMessage(msg, serverIp):
         nodeID = communication.converIpToNodeId(serverIp)
         if nodeID != myNodeID:
             print("Message: [" + msg.decode('utf-8'))
+
+
+def createDenResponse():
+    type = "DEN"
+    time = str(datetime.datetime.now().time())
+    msgId = DEN_msg_Id + 1
+    event_type = "FORWARD"
+    duration = 15
+    msg = type + "|" + time + "|" + str(msgId) + "|" + event_type + "|" + str(duration)
+    return msg
+
 #------------------------------------------------
 #INITIALIZATIONS
 #------------------------------------------------
@@ -117,7 +129,7 @@ def processMessage(msg, serverIp):
 sem = threading.Semaphore()
 receiverSocket = communication.initializeReceiverSocket()
 senderSocket = communication.initializeSenderSocket()
-myIP = ni.ifaddresses('en1')[ni.AF_INET6][0]['addr']
+myIP = ni.ifaddresses('en0')[ni.AF_INET6][0]['addr']
 myNodeID = communication.converIpToNodeId(myIP)
 
 #----------------------------------------------
@@ -158,10 +170,12 @@ class Timer(threading.Thread):
 #-------------------------------------------------
 #MAIN
 #-------------------------------------------------
-timer = Timer()
-timer.run()
+timer = Timer(1)
+timer.start()
 beaconService = Beacon_Service(open("taxi_february.txt", "r")) # opens the file taxi_february.txt on read mode
-beaconService.run()
+beaconService.start()
+
+communication.Sender(senderSocket, createDenResponse())
 
 while True:
     (ServerMsg, (ServerIP, ServerPort)) = communication.Receiver(receiverSocket)

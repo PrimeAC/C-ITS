@@ -83,7 +83,7 @@ def printTable():
 sem = threading.Semaphore()
 receiverSocket = communication.initializeReceiverSocket()
 senderSocket = communication.initializeSenderSocket()
-myIP = ni.ifaddresses('en1')[ni.AF_INET6][0]['addr']
+myIP = ni.ifaddresses('en0')[ni.AF_INET6][0]['addr']
 myNodeID = communication.converIpToNodeId(myIP)
 
 #----------------------------------------------
@@ -118,6 +118,7 @@ class Handler(threading.Thread):
 class Beacon_Service(threading.Thread):
 
     def __init__(self, f):
+        threading.Thread.__init__(self)
         self.msgID = 0
         self.file = f
         self.type = "BEACON"
@@ -131,7 +132,10 @@ class Beacon_Service(threading.Thread):
             message = self.type + "|" + latitude + "|" + longitude + "|" + str(datetime.datetime.now().time()) + "|" + str(
                 msgID)
             print("Sent: " + message)
-            communication.Sender(senderSocket,message)
+            if senderSocket == None:
+                print("Deu bosta")
+
+            communication.Sender(senderSocket, message)
             sent_time = str(datetime.datetime.now().time())
             while True:
                 if checkTimer(sent_time) == True:
@@ -150,12 +154,14 @@ class Timer(threading.Thread):
 #-------------------------------------------------
 #MAIN
 #-------------------------------------------------
+timer = Timer(1)
+timer.start()
 beaconService = Beacon_Service(open("taxi_february.txt", "r")) # opens the file taxi_february.txt on read mode
-beaconService.run()
+beaconService.start()
 
 while True:
     (ClientMsg, (ClientIP, ClientPort)) = communication.Receiver(receiverSocket)
-    handler = Handler(ClientMsg, ClientIP, ClientPort)
+    handler = Handler(ClientMsg, ClientIP)
     # Add threads to thread list
     threads.append(handler)
     handler.run()
