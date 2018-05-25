@@ -50,11 +50,10 @@ def updatePosition(positions, mapName):
 TIME_SPENT_TO_MOVE = 3
 
 CAR_MAP = []
+DROP_OFF_AREA = [0, 0]
 
-def convertPositionsToTime(positions):
-    totalPositions = int(positions[0]) + int(positions[1])
-    print("calculei que vou andar " + str(totalPositions))
-    return TIME_SPENT_TO_MOVE * totalPositions
+def convertPositionsToTime(xVariation):
+    return TIME_SPENT_TO_MOVE * int(xVariation)
 
 
 def decideTurnDirection(movement):
@@ -67,9 +66,9 @@ def decideTurnDirection(movement):
     #else:
         #test_motor.noTurn()
 
-def virtualToRealMovement(direction, turn, positionx, positiony, duration):
+def virtualToRealMovement(direction, turn, xVariation):
     #direction could be forward/backward, and turn could be right/left
-    #positionx number of positions variation, y number of positions variation 
+    #xVariation number of positions variation 
     #gets the x axis, if it's forward or backward
     if direction == 'forward':
         #gets the y axis, if it's left or right
@@ -80,13 +79,9 @@ def virtualToRealMovement(direction, turn, positionx, positiony, duration):
         #test_motor.backward()
         print("era para tras")
         decideTurnDirection(turn)
-    #sleep(int(convertPositionsToTime(positions)))
-    sleep(float(duration))
+    sleep(int(convertPositionsToTime(xVariation)))
     test_motor.stop()
-    positions = []
-    positions.append(positionx)
-    positions.append(positiony)
-    updatePosition(positions, CAR_MAP)
+    #updatePosition(xVariation, CAR_MAP)
 
 
 ############################# END OF CLIENT MOVEMENT ###################################
@@ -97,21 +92,128 @@ def virtualToRealMovement(direction, turn, positionx, positiony, duration):
 
 GARAGE_MAP = []
 
-PARKING_SPOT_1 = [15,15]
-PARKING_SPOT_2 = [30,15]
+
+PARKING_SPOTS_STATUS = { 1: "free", 2: "free"}
+PARKING_SPOTS_COORDINATES = { 1: [15, 15], 2: [30, 15]}
+
+def getParkingSpotCoordinates(key):
+    for coordinates in PARKING_SPOTS_COORDINATES:
+        if coordinates == key:
+            return PARKING_SPOTS_COORDINATES[coordinates]
+    return None
 
 
 def assignParkingSpot():
-    if GARAGE_MAP[PARKING_SPOT_1[1]][PARKING_SPOT_1[0]] == 0:
-        print('lugar 1 livre')
-        GARAGE_MAP[PARKING_SPOT_1[1]][PARKING_SPOT_1[0]] = 1
-        createPath(PARKING_SPOT_1)
-    elif GARAGE_MAP[PARKING_SPOT_2[1]][PARKING_SPOT_2[0]] == 0:
-        print('lugar 2 livre')
-        GARAGE_MAP[PARKING_SPOT_2[1]][PARKING_SPOT_2[0]] = 1
-        createPath(PARKING_SPOT_2)
+    for spot in PARKING_SPOTS_STATUS:
+        if PARKING_SPOTS_STATUS[spot] == "free":
+            parkingSpot = getParkingSpotCoordinates(spot)
+            if parkingSpot != None:
+                return parkingSpot
+    return None
+
+
+def calculatePath(initialPoint, finalPoint):
+    path = []
+    instructions = []
+    xDiff = finalPoint[0] - initialPoint[0]
+    yDiff = finalPoint[1] - initialPoint[1]
+    if xDiff - yDiff > 0:
+        #has to go only forward first
+        instructions.append(xDiff - yDiff)
+        instructions.append(0)
+        instructions.append('forward')
+        instructions.append('')
+        path.append(instructions)
+        instructions = []
+        instructions.append(xDiff)
+        instructions.append(yDiff)
+        instructions.append('forward')
+        instructions.append('right')
+        path.append(instructions)
+        return path
+    elif xDiff - yDiff == 0:
+        #has to go forward and right
+        instructions.append(xDiff)
+        instructions.append(yDiff)
+        instructions.append('forward')
+        instructions.append('right')
+        path.append(instructions)
+        return path
     else:
-        print('sem lugares disponiveis')
+        return None
+
+
+def calculateLeavingPath(initialPoint, finalPoint):
+    path = []
+    instructions = []
+    xDiff = finalPoint[0] - initialPoint[0]
+    yDiff = finalPoint[1] - initialPoint[1]
+    if xDiff - yDiff < 0:
+        #has to go only forward first
+        instructions.append(initialPoint + (xDiff - yDiff))
+        instructions.append(initialPoint + (xDiff - yDiff))
+        instructions.append('backward')
+        instructions.append('right')
+        path.append(instructions)
+        instructions = []
+        instructions.append(initialPoint + xDiff)
+        instructions.append(0)
+        instructions.append('backward')
+        instructions.append('')
+        path.append(instructions)
+        return path
+    elif xDiff - yDiff == 0:
+        #has to go forward and right
+        instructions.append(initialPoint + xDiff)
+        instructions.append(initialPoint + yDiff)
+        instructions.append('backward')
+        instructions.append('right')
+        path.append(instructions)
+        return path
+    else:
+        return None
+
+
+def pathFinder(initialPoint):
+    #initialPoint is an array with the x and y values, like [0, 0]
+    if initialPoint[0] == 0 and initialPoint[1] == 0:
+        #means that is parking, because its on the drop off area
+        parkingSpot = assignParkingSpot()
+        if parkingSpot != None:
+            return calculatePath(initialPoint, parkingSpot)
+        else:
+            return None
+    else:
+        #means that is leaving
+        return calculatePath(initialPoint, DROP_OFF_AREA)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def turn(path, highest, parkingSpot):
@@ -184,7 +286,7 @@ def decideMovement(path):
     #the x increases from the left to the right
     #the y increases from up to down
     #path is list with all the coordinates from start to end, ex: [[0, 1], [0, 4], ...]
-    #movements its the list to send to the car and positions is the number of positions that the client has to travel
+    #movements is the list to send to the car and positions is the number of positions that the client has to travel
     if len(path) > 0:
         movements = []
         positions = []
@@ -209,10 +311,8 @@ def decideMovement(path):
         print("positions " + str(positions))
         updatePosition(positions, GARAGE_MAP)
         updatePath(path)
+    else:
+        print('path esta vazio')
 
 ############################# END OF SERVER MOVEMENT ###################################
 
-
-
-createMap(CAR_MAP)
-printMap(CAR_MAP)
