@@ -1,9 +1,10 @@
-import threading
+import threading, _thread
 import time
 import datetime
 import communication
 import test_carMovement
-
+import netifaces as ni
+import garage
 #----------------------------------------------
 #CONSTANTS
 #----------------------------------------------
@@ -14,6 +15,7 @@ LONGITUDE = 2
 
 neighbor_table={}  # creates a dictionary that saves all the neighbors status
 DEN_msg_Id=0
+
 
 #------------------------------------------------
 #FUNCTIONS
@@ -85,9 +87,11 @@ def printTable():
               "|" + neighbor_table[key][3] + "|" + neighbor_table[key][4])
     sem.release()
 
-def processMessage(msg, serverIp):
+def processMessager(msg, serverIp):
     msg = msg.decode('utf-8').split("|")
     type = msg[0]
+    event_type = msg[3]
+    description = msg[4]
 
     if not msg:
         exit(-1, "Empty message!")
@@ -96,25 +100,35 @@ def processMessage(msg, serverIp):
         nodeID = communication.converIpToNodeId(serverIp[0])
         print (nodeID, myNodeID)
         if nodeID != myNodeID:
-            #print("Message: [" + msg.decode('utf-8') + "] received on IP/PORT: [" + str(nodeID) + "," + str(serverIp) + "]")
             tableUpdate(msg, nodeID)
             printTable()
 
     elif type == "DEN":
         nodeID = communication.converIpToNodeId(serverIp[0])
         if nodeID != myNodeID:
-            #print("Message: [" + msg.decode('utf-8'))
-            test_carMovement.virtualToRealMovement(msg[3], msg[4], "","",msg[5])
+            if event_type == "-1":
+                print (description) #if error print description of message
+            elif event_type == "Movements":
+                des = description.split(",")
+                x = des[0]
+                y = des[1]
+                front_back = des[2]
+                right_left = des[3]
+                get_position = test_carMovement.virtualToRealMovement(front_back, right_left, x, y)
+                if get_position != -1:
+                    my_current_position_w.write(x + ";" + y)
 
 
-def createDenResponse():
-    type = "DEN"
-    time = str(datetime.datetime.now().time())
-    msgId = DEN_msg_Id + 1
-    event_type = "FORWARD"
-    duration = 15
-    msg = type + "|" + time + "|" + str(msgId) + "|" + event_type + "|" + str(duration)
-    return msg
+def read_input():
+    while True:
+        i = input("Press E to park, S to leave \n")
+        if i == "E":
+            new_den_msg = garage.createDenResponse("RequestParking",(x,y))
+            communication.Sender(senderSocket, new_den_msg)
+        elif i == "S":
+            new_den_msg = garage.createDenResponse("RequestExit",(x,y))
+            communication.Sender(senderSocket, new_den_msg)
+
 
 #------------------------------------------------
 #INITIALIZATIONS
@@ -123,15 +137,22 @@ def createDenResponse():
 sem = threading.Semaphore()
 receiverSocket = communication.initializeReceiverSocket()
 senderSocket = communication.initializeSenderSocket()
-myIP = 'fe80::ba27:ebff:fed1:533'
+myIP = ni.ifaddresses('en1')[ni.AF_INET6][0]['addr']
 myNodeID = communication.converIpToNodeId(myIP)
+
+my_current_position_r = open("position.txt", "r").readline()
+my_current_position_w = open("position.txt", "w")
+
+x,y = my_current_position_r.split(';')
+
+print (x,y)
 
 #----------------------------------------------
 #CLASS
 #----------------------------------------------
 
-class Beacon_Service(threading.Thread):
 
+class Beacon_Service(threading.Thread):
     def __init__(self, f):
         threading.Thread.__init__(self)
         self.msgID = 0
@@ -139,19 +160,19 @@ class Beacon_Service(threading.Thread):
         self.type = "BEACON"
 
     def run(self):
-        for line in self.file:
-            gps_message = line.split(";")[2].split("(")[1].split(" ")
-            latitude = gps_message[0]
-            longitude = gps_message[1].split(")")[0]
-            msgID = self.msgID + 1
-            message = self.type + "|" + latitude + "|" + longitude + "|" + str(datetime.datetime.now().time()) + "|" + str(
-                msgID)
-            print("Sent: " + message)
-            communication.Sender(senderSocket,message)
-            sent_time = str(datetime.datetime.now().time())
-            while True:
-                if checkTimer(sent_time) == True:
-                    break
+        msg = msg.decode('utf-8').split("|")
+        description = msg[4]
+        des = description.split(",")
+        x = des[0]
+        y = des[1]
+        msgID = self.msgID + 1
+        message = self.type + "|" + x + "|" + y + "|" + str(datetime.datetime.now().time()) + "|" + str(msgID)
+        print("Sent: " + message)
+        communication.Sender(senderSocket,message)
+        sent_time = str(datetime.datetime.now().time())
+        while True:
+            if checkTimer(sent_time) == True:
+                break
 
 class Timer(threading.Thread):
     def __init__(self, loopTime):
@@ -167,12 +188,13 @@ class Timer(threading.Thread):
 #-------------------------------------------------
 timer = Timer(1)
 timer.start()
-beaconService = Beacon_Service(open("taxi_february.txt", "r")) # opens the file taxi_february.txt on read mode
+beaconService = Beacon_Service()
 beaconService.start()
 
-#communication.Sender(senderSocket, createDenResponse())
+_thread.start_new_thread(read_input(),())
 
 while True:
     (ServerMsg, (ServerIP)) = communication.Receiver(receiverSocket)
-    processMessage(ServerMsg, ServerIP)
+    processMessager(ServerMsg, ServerIP)
+
 
