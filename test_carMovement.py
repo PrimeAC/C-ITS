@@ -51,10 +51,9 @@ TIME_SPENT_TO_MOVE = 3
 
 CAR_MAP = []
 
-def convertPositionsToTime(positions):
-    totalPositions = int(positions[0]) + int(positions[1])
-    print("calculei que vou andar " + str(totalPositions))
-    return TIME_SPENT_TO_MOVE * totalPositions
+
+def convertPositionsToTime(xVariation):
+    return TIME_SPENT_TO_MOVE * int(xVariation)
 
 
 def decideTurnDirection(movement):
@@ -67,9 +66,9 @@ def decideTurnDirection(movement):
     #else:
         #test_motor.noTurn()
 
-def virtualToRealMovement(direction, turn, positionx, positiony, duration):
+def virtualToRealMovement(direction, turn, xVariation):
     #direction could be forward/backward, and turn could be right/left
-    #positionx number of positions variation, y number of positions variation 
+    #xVariation number of positions variation 
     #gets the x axis, if it's forward or backward
     if direction == 'forward':
         #gets the y axis, if it's left or right
@@ -80,139 +79,12 @@ def virtualToRealMovement(direction, turn, positionx, positiony, duration):
         #test_motor.backward()
         print("era para tras")
         decideTurnDirection(turn)
-    #sleep(int(convertPositionsToTime(positions)))
-    sleep(float(duration))
+    sleep(int(convertPositionsToTime(xVariation)))
     test_motor.stop()
-    positions = []
-    positions.append(positionx)
-    positions.append(positiony)
-    updatePosition(positions, CAR_MAP)
+    #updatePosition(xVariation, CAR_MAP)
 
 
 ############################# END OF CLIENT MOVEMENT ###################################
 
 
 
-############################# START OF SERVER MOVEMENT ###################################
-
-GARAGE_MAP = []
-
-PARKING_SPOT_1 = [15,15]
-PARKING_SPOT_2 = [30,15]
-
-
-def assignParkingSpot():
-    if GARAGE_MAP[PARKING_SPOT_1[1]][PARKING_SPOT_1[0]] == 0:
-        print('lugar 1 livre')
-        GARAGE_MAP[PARKING_SPOT_1[1]][PARKING_SPOT_1[0]] = 1
-        createPath(PARKING_SPOT_1)
-    elif GARAGE_MAP[PARKING_SPOT_2[1]][PARKING_SPOT_2[0]] == 0:
-        print('lugar 2 livre')
-        GARAGE_MAP[PARKING_SPOT_2[1]][PARKING_SPOT_2[0]] = 1
-        createPath(PARKING_SPOT_2)
-    else:
-        print('sem lugares disponiveis')
-
-
-def turn(path, highest, parkingSpot):
-    print('segundo')
-    isFirst = True
-    for x in range(0,parkingSpot + 1 ,5):
-        if isFirst == False:
-            coordinates = []
-            coordinates.append(x + highest)
-            coordinates.append(x)
-            path.append(coordinates)
-            print(path)
-        else:
-            isFirst = False
-    return path
-        
-
-def createPath(parkingSpot):
-    #parking spot is the coordinates of de assigned parking spot
-    isFirst = True
-    path = []
-    print(parkingSpot)
-    currentPosition = getCurrentPosition(GARAGE_MAP)
-    xDiff = parkingSpot[0] - currentPosition[0]
-    yDiff = parkingSpot[1] - currentPosition[1]
-    if xDiff - yDiff > 0:
-        print('entrei')
-        for x in range(0,(xDiff - yDiff)+1,5):
-            print('entrei for')
-            #will send the car move forward until xDiff = yDiff
-            if isFirst == False:
-                coordinates = []
-                coordinates.append(x)
-                coordinates.append(0)
-                path.append(coordinates)
-                print(path)
-                print(x == (xDiff - yDiff))
-                if x == (xDiff - yDiff):
-                    path = turn(path, x, parkingSpot[1])
-            else:
-                isFirst = False
-    elif xDiff - yDiff == 0:
-        #needs to turn
-        path = turn(path, 0, parkingSpot[1])
-
-
-def updatePath(path):
-    if len(path) > 0:        
-        del path[0]
-
-
-def printPath(path):
-    for coordinates in path:
-        print(coordinates) 
-
-
-def decideTurn(yDiff):
-    if yDiff > 0:
-        print('preciso de virar para a direita')
-        return 'right'
-    elif yDiff < 0:
-        print('preciso de virar para a esquerda')
-        return 'left'
-    else:
-        print('diff do y e zero')
-        return ''
-
-
-def decideMovement(path):
-    #the x increases from the left to the right
-    #the y increases from up to down
-    #path is list with all the coordinates from start to end, ex: [[0, 1], [0, 4], ...]
-    #movements its the list to send to the car and positions is the number of positions that the client has to travel
-    if len(path) > 0:
-        movements = []
-        positions = []
-        currentPosition = getCurrentPosition(GARAGE_MAP)
-        print("minha posicao atual " + str(currentPosition))
-        currentX = currentPosition[0]
-        currentY = currentPosition[1]
-        nextX = path[0][0]
-        nextY = path[0][1]
-        positions.append(int(math.fabs(nextX - currentX)))
-        positions.append(int(math.fabs(nextY - currentY)))
-        if nextX - currentX < 0:
-            #need to move backwards
-            print('mover para tras')
-            movements.append('backward')
-            movements.append(decideTurn(nextY - currentY))
-        elif nextX - currentX > 0:
-            #need to move forward
-            print('mover para a frente')
-            movements.append('forward')
-            movements.append(decideTurn(nextY - currentY))
-        print("positions " + str(positions))
-        updatePosition(positions, GARAGE_MAP)
-        updatePath(path)
-
-############################# END OF SERVER MOVEMENT ###################################
-
-
-
-createMap(CAR_MAP)
-printMap(CAR_MAP)

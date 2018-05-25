@@ -88,30 +88,6 @@ def stop():
 def noTurn():
     GPIO.output(gpio_data['enable_turn'], GPIO.LOW)
 
-def test_motor(gpio_data):
-    if RASPBERRY == True:
-        print ('testing motion_engine - forward direction')
-        input('print enter to continue')
-        forward()
-        sleep(SLEEP_TIME)
-        print ('testing motion_engine - backward direction')
-        #input('print enter to continue')
-        backward()
-        sleep(SLEEP_TIME)
-        print ('testing motion_engine - forward direction')
-        #input('print enter to continue')
-        forward()
-        sleep(SLEEP_TIME)
-        print ('testing steering_wheel - right turn')
-        #input('print enter to continue')
-        turn_right()
-        sleep(SLEEP_TIME)
-        print ('testing steering_wheel - left turn')
-        #input('print enter to continue')
-        turn_left()
-        sleep(SLEEP_TIME)
-        print ('test concluded')
-        #input('press enter to terminate the test')
 
 gpio_data = {}
 gpio_data = read_gpio_conf('gpio_pins')
