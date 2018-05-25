@@ -36,10 +36,10 @@ def updatePosition(positions, mapName):
     print(currentPosition)
     currentX = int(currentPosition[0])
     currentY = int(currentPosition[1])
-    addingX = int(positions[0])
-    addingY = int(positions[1])
+    newX = int(positions[0])
+    newY = int(positions[1])
     mapName[currentY][currentX] = 0
-    mapName[currentY + addingY][currentX + addingX] = 1
+    mapName[newY][newX] = 1
 
 ########################### COMMON CODE TO BOTH ##########################################
 
@@ -52,8 +52,9 @@ TIME_SPENT_TO_MOVE = 3
 CAR_MAP = []
 
 
-def convertPositionsToTime(xVariation):
-    return TIME_SPENT_TO_MOVE * int(xVariation)
+def convertPositionsToTime(positions):
+    total_positions = int(positions[0]) + int(positions[1])
+    return TIME_SPENT_TO_MOVE * total_positions
 
 
 def decideTurnDirection(movement):
@@ -66,9 +67,9 @@ def decideTurnDirection(movement):
     #else:
         #test_motor.noTurn()
 
-def virtualToRealMovement(direction, turn, xVariation):
+def virtualToRealMovement(direction, turn, x, y):
     #direction could be forward/backward, and turn could be right/left
-    #xVariation number of positions variation 
+    #x and y are the destination coordinates
     #gets the x axis, if it's forward or backward
     if direction == 'forward':
         #gets the y axis, if it's left or right
@@ -79,7 +80,10 @@ def virtualToRealMovement(direction, turn, xVariation):
         #test_motor.backward()
         print("era para tras")
         decideTurnDirection(turn)
-    sleep(int(convertPositionsToTime(xVariation)))
+    positions = []
+    positions.append(x)
+    positions.append(y)
+    sleep(int(convertPositionsToTime(positions)))
     test_motor.stop()
     #updatePosition(xVariation, CAR_MAP)
 
