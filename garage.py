@@ -11,7 +11,7 @@ import netifaces as ni
 threads = []
 neighbor_table={}  # creates a dictionary that saves all the neighbors status
 DEN_msg_Id=0
-
+inOperation=False
 
 #------------------------------------------------
 #FUNCTIONS
@@ -71,6 +71,12 @@ def tableUpdate(msg, nodeID):
         neighbor_table[nodeID] = [latitude, longitude, time, msgID, str(datetime.datetime.now().time()).split(".")[0]]
         sem.release()
 
+def getPositionByNodeId(nodeID):
+    if nodeID in neighbor_table:
+        return [neighbor_table[nodeID][0],neighbor_table[nodeID][1]]
+    else:
+        return None
+
 def printTable():
     print("Neighbor table:")
     sem.acquire()
@@ -80,12 +86,11 @@ def printTable():
     sem.release()
 
 
-def createDenResponse(direction,turn, positionx, positiony, duration):
+def createDenResponse(event_type, description):
     type = "DEN"
     time = str(datetime.datetime.now().time())
     msgId = DEN_msg_Id + 1
-    event_type = direction + "|" + turn
-    msg = type + "|" + time + "|" + str(msgId) + "|" + event_type + "|" + str(duration)
+    msg = type + "|" + time + "|" + str(msgId) + "|" + event_type + "|" + description
     return msg
 
 #------------------------------------------------
@@ -125,7 +130,49 @@ class Handler(threading.Thread):
         elif type == "DEN":
             nodeID = communication.converIpToNodeId(self.clientIP[0])
             if nodeID != myNodeID:
-                print("Message: [" + self.msg.decode('utf-8'))
+
+                if inOperation:
+                    den_msg = createDenResponse("-1", "Parking/Exiting process in progress.")
+                    communication.Sender(senderSocket, den_msg)
+                else:
+                    if msg[3] == "RequestParking":
+                        currentPosition = msg[4].split(",")
+                        path = garageManager.pathFinder(currentPosition)
+
+                        if path is None: #If no parking spaces are available
+                            den_msg = createDenResponse("-1", "No parking spaces available")
+                            communication.Sender(senderSocket, den_msg)
+                        else:
+                            for step in path:
+                                den_msg = createDenResponse("Movement", str(step))
+                                communication.Sender(senderSocket, den_msg)
+
+                                #Wait for beacon confirming position changed
+                                while neighbor_table[nodeID][0] != step[0] and neighbor_table[nodeID][1] != step[1]:
+                                    time.sleep(1)
+
+                            den_msg = createDenResponse("ParkingDone", "Parking operation sucessefull")
+                            communication.Sender(senderSocket, den_msg)
+
+
+                    elif msg[3] == "RequestExit":
+                        currentPosition = msg[4].split(",")
+                        path = garageManager.pathFinder(currentPosition)
+
+                        if path is None: #If no parking spaces are available
+                            den_msg = createDenResponse("-1", "It was not possible to calculate a exit route")
+                            communication.Sender(senderSocket, den_msg)
+                        else:
+                            for step in path:
+                                den_msg = createDenResponse("Movement", str(step))
+                                communication.Sender(senderSocket, den_msg)
+
+                                #Wait for beacon confirming position changed
+                                while neighbor_table[nodeID][0] != step[0] and neighbor_table[nodeID][1] != step[1]:
+                                    time.sleep(1)
+
+                            den_msg = createDenResponse("ExitDone", "You can drive away now")
+                            communication.Sender(senderSocket, den_msg)
 
 class Beacon_Service(threading.Thread):
 
@@ -170,17 +217,6 @@ timer = Timer(1)
 timer.start()
 beaconService = Beacon_Service(open("taxi_february.txt", "r")) # opens the file taxi_february.txt on read mode
 beaconService.start()
-
-
-
-communication.Sender(senderSocket, createDenResponse("forward", "", "", "", 2.95))
-time.sleep(3)
-communication.Sender(senderSocket,createDenResponse("forward", "right","", "", 5))
-time.sleep(7)
-communication.Sender(senderSocket,createDenResponse("backward", "right","", "", 5))
-time.sleep(7)
-communication.Sender(senderSocket,createDenResponse("forward", "","", "", 5))
-
 
 while True:
     (ClientMsg, (ClientIP)) = communication.Receiver(receiverSocket)
