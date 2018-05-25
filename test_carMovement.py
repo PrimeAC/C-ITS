@@ -85,7 +85,8 @@ def virtualToRealMovement(direction, turn, x, y):
     positions.append(y)
     sleep(int(convertPositionsToTime(positions)))
     test_motor.stop()
-    #updatePosition(xVariation, CAR_MAP)
+    updatePosition(positions, CAR_MAP)
+    return 0
 
 
 ############################# END OF CLIENT MOVEMENT ###################################
