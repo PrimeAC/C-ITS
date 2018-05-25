@@ -1,6 +1,6 @@
 from time import sleep
 import math
-#import test_motor
+import test_motor
 
 ############################# COMMON CODE TO BOTH ######################################
 
@@ -59,13 +59,11 @@ def convertPositionsToTime(positions):
 
 def decideTurnDirection(movement):
     if movement == 'left':
-        #test_motor.turn_left()
-        print("era para a esquerda")
+        test_motor.turn_left()
     elif movement == 'right':
-        #test_motor.turn_right()
-        print("era para a direita")
-    #else:
-        #test_motor.noTurn()
+        test_motor.turn_right()
+    else:
+        test_motor.noTurn()
 
 def virtualToRealMovement(direction, turn, x, y):
     #direction could be forward/backward, and turn could be right/left
@@ -73,12 +71,10 @@ def virtualToRealMovement(direction, turn, x, y):
     #gets the x axis, if it's forward or backward
     if direction == 'forward':
         #gets the y axis, if it's left or right
-        #test_motor.forward()
-        print("era para a frente")
+        test_motor.forward()
         decideTurnDirection(turn)
     elif direction == 'backward':
-        #test_motor.backward()
-        print("era para tras")
+        test_motor.backward()
         decideTurnDirection(turn)
     positions = []
     positions.append(x)
