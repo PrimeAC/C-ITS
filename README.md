@@ -1,6 +1,6 @@
 # Cooperative Intelligent Transportation System (C-ITS)
 
-#Repository for the project of the Vehicular Networks class.
+Repository for the project of the Vehicular Networks class.
 
 
 To run the application preform the following steps:
